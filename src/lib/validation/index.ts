@@ -15,3 +15,13 @@ export const SigninValidation = z.object({
     .string()
     .min(10, { message: "password must be atleast 10 chars" }),
 });
+
+export const postValidation = z.object({
+  caption: z
+    .string()
+    .min(5, { message: "Too Short" })
+    .max(2200, { message: "Too Long" }),
+  file: z.custom<File[]>(),
+  location: z.string().min(2, { message: "Too Short" }),
+  tags: z.string(),
+});
