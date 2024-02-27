@@ -15,19 +15,25 @@ import FileUploader from "../shared/FileUploader";
 import { Input } from "../ui/input";
 import { postValidation } from "@/lib/validation";
 import { Models } from "appwrite";
-import { useCreatePost } from "@/lib/react-query/queriesAndMutations";
+import {
+  useCreatePost,
+  useUpdatePost,
+} from "@/lib/react-query/queriesAndMutations";
 import { useUserContext } from "@/context/AuthContext";
 import { toast } from "../ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
 type PostFormProps = {
   post?: Models.Document;
+  action: "Create" | "Update";
 };
 
-const PostForm = ({ post }: PostFormProps) => {
+const PostForm = ({ post, action }: PostFormProps) => {
   const navigate = useNavigate();
   const { mutateAsync: createPost, isPending: isLoadingCreate } =
     useCreatePost();
+  const { mutateAsync: updatePost, isPending: isLoadingUpdate } =
+    useUpdatePost();
   const { user } = useUserContext();
 
   const form = useForm<z.infer<typeof postValidation>>({
@@ -41,6 +47,26 @@ const PostForm = ({ post }: PostFormProps) => {
   });
 
   async function onSubmit(values: z.infer<typeof postValidation>) {
+    if (post && action === "Update") {
+      const updatedPost = await updatePost({
+        caption: values.caption,
+        file: values.file,
+        postId: post.$id,
+        imageId: post.imageId,
+        imageUrl: post.imageUrl,
+        location: values.location,
+        tags: values.tags,
+      });
+
+      if (!updatedPost) {
+        toast({
+          title: "Something went wrong",
+        });
+      }
+
+      return navigate(`/posts/${post.$id}`);
+    }
+
     const newPost = await createPost({
       caption: values.caption,
       file: values.file,
@@ -137,7 +163,7 @@ const PostForm = ({ post }: PostFormProps) => {
             type="submit"
             className="shad-button_primary whitespace-nowrap"
           >
-            Submit
+            {action} Post
           </Button>
         </div>
       </form>
